@@ -1,0 +1,40 @@
+name: Generate BNOC data-share GDrive tree
+
+on:
+  schedule:
+    - cron: "0 0 * * *"  # 00:00 UTC nightly
+  workflow_dispatch:
+
+permissions:
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Generate HTML
+        env:
+          GDRIVE_API_KEY: ${{ secrets.GDRIVE_API_KEY }}
+        run: |
+          python3 gdrive-tree.py \
+            --folder-id "${{ vars.GDRIVE_FOLDER_ID }}" \
+            --output _site/index.html \
+            --title "BNOC data-share"
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site/
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v5
+        id: deployment
+
